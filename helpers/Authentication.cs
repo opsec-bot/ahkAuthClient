@@ -3,7 +3,7 @@ using System.Text.Json;
 
 public class Authentication
 {
-    private static readonly string[] GamePassIds = { "your_gamepass_id_here" };
+    private static readonly string[] GamePassIds = { "<your_gamepass_id_here>" }; // Update Idea: fetch ID's from API
 
     private async Task<bool> VerifyHasGamepass(string userId, string gpId)
     {

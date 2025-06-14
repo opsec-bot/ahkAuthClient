@@ -1,15 +1,72 @@
 ﻿using System.Diagnostics;
+using System.Net;
+using System.Reflection;
 
 public static class Launcher
 {
-    private const string AHKExePath = @"C:\Program Files\AutoHotkey\v1.1.37.02\AutoHotkeyU64.exe"; // Later on make this a function that checks for V1 and finds latest version
+    private static string[] AHKPaths = new[]
+        {
+        @"C:\Program Files\AutoHotkey\AutoHotkeyU64.exe",
+        @"C:\Program Files\AutoHotkey\v1.1.37.02\AutoHotkeyU64.exe"
+    };
+
+    private static string AHKInstallerUrl = "https://www.autohotkey.com/download/ahk-install.exe";
+    private static string AHKInstallerName = "AutoHotkey_1.1.37.02_setup.exe";
 
     public static async Task LaunchAHK(string script)
     {
-        var psi = new ProcessStartInfo(AHKExePath, "*")
+        string ahkPath = null;
+
+        foreach (var path in AHKPaths)
+        {
+            if (File.Exists(path))
+            {
+                ahkPath = path;
+                break;
+            }
+        }
+
+        if (ahkPath == null)
+        {
+            Console.Clear();
+            Console.WriteLine("[X] AutoHotkey not found, installing...");
+            Console.WriteLine("[*] Will automatically restart once finished");
+
+            string tempPath = Path.Combine(Path.GetTempPath(), AHKInstallerName);
+            using (var httpClient = new HttpClient())
+            {
+                var response = await httpClient.GetAsync(AHKInstallerUrl);
+                response.EnsureSuccessStatusCode();
+                await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await response.Content.CopyToAsync(fileStream);
+            }
+
+            var installProc = Process.Start(new ProcessStartInfo
+            {
+                FileName = tempPath,
+                Arguments = "/S",
+                UseShellExecute = true
+            });
+            installProc.WaitForExit();
+
+            //  Restart self
+            string exePath = Assembly.GetExecutingAssembly().Location;
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "cmd",
+                Arguments = $"/c start \"\" \"{exePath}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false
+            });
+
+            Environment.Exit(0); // Kill old process
+            return;
+        }
+
+        var psi = new ProcessStartInfo(ahkPath, "*")
         {
             UseShellExecute = false,
-            RedirectStandardInput = true,
+            RedirectStandardInput = true
         };
 
         using var process = Process.Start(psi)!;
@@ -17,7 +74,7 @@ public static class Launcher
         process.StandardInput.Close();
     }
 
-    public static async Task StartSpinner(Task task, string message = "[*] Working")
+public static async Task StartSpinner(Task task, string message = "[*] Working")
     {
         var spinner = new[] { "|", "/", "-", "\\" };
         var fillerMessages = new[]
