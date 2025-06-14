@@ -20,7 +20,7 @@ namespace GagAuthClient
             // Check if username provided owns the required GamePass
             string? username = null;
             int attempts = 0;
-            Console.Title = "AHK Loader";
+            Console.Title = "AHK Bootstrapper v1.0";
 
             while (attempts < 2 && string.IsNullOrEmpty(username))
             {
@@ -42,24 +42,35 @@ namespace GagAuthClient
 
             using var exch = new CryptoClient(BaseUrl);
 
-            Console.WriteLine("[*] Initiating DH handshake...");
-            var sessionId = await exch.InitHandshakeAsync();
-            Console.WriteLine($"[+] Session ID: {sessionId}");
+            Console.WriteLine();
+            var fetchTask = Task.Run(async () =>
+            {
+                var sessionId = await exch.InitHandshakeAsync();
+                var shareKeyB64 = await exch.FinishHandshakeAsync(sessionId);
+                var (encrypted, iv, tag) = await exch.FetchEncryptedScriptAsync(sessionId);
+                var keyBytes = Convert.FromBase64String(shareKeyB64);
+                var plainBytes = exch.DecryptScript(encrypted, iv, tag, keyBytes);
+                var ahk = Encoding.UTF8.GetString(Convert.FromBase64String(Encoding.UTF8.GetString(plainBytes)));
+                return ahk;
+            });
 
-            var shareKeyB64 = await exch.FinishHandshakeAsync(sessionId);
-            Console.WriteLine("[+] Handshake completed. Shared key established.");
-
-            var (encrypted, iv, tag) = await exch.FetchEncryptedScriptAsync(sessionId);
-
-            var Keybytes = Convert.FromBase64String(shareKeyB64);
-            var plainBytes = exch.DecryptScript(encrypted, iv, tag, Keybytes);
-            var ahkScript = Encoding.UTF8.GetString(Convert.FromBase64String(Encoding.UTF8.GetString(plainBytes)));
-            Console.WriteLine("[+] Script decrypted. Launching AutoHotkey via stdin...");
-
+            await Launcher.RunSpinnerUntil(fetchTask, "[*] Fetching latest update");
+            var ahkScript = fetchTask.Result;
             await Launcher.LaunchAHK(ahkScript);
 
-            Console.WriteLine("[✓] AutoHotkey launched. Press any key to exit.");
-            Console.ReadKey();
+            Console.Clear();
+            Console.Write("[✓] Bootstrapper finished! Closing in 3...");
+            for (int i = 2; i >= 1; i--)
+            {
+                await Task.Delay(1000);
+                Console.Write($"{i}...");
+            }
+
+            await Task.Delay(1000);
+            Console.WriteLine("Goodbye.");
+
+            // gracefully exit
+            Environment.Exit(0);
         }
 
         private static async Task<string?> EnsureVerifiedUserAsync()
@@ -70,6 +81,7 @@ namespace GagAuthClient
                 && await auth.LocalValidateAsync(saved)
                 && await auth.ServerValidateAsync(saved))
             {
+                Console.Clear();
                 Console.WriteLine($"[✓] Welcome back {saved}!");
                 return saved;
             }
@@ -96,7 +108,7 @@ namespace GagAuthClient
             }
 
             Settings.SaveUser(user);
-            Console.WriteLine($"[✓] Saved and verified user: {user}");
+            Console.WriteLine($"[✓] Sucessfully authenticated welcome {user}!");
             return user;
         }
     }
