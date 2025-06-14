@@ -1,52 +1,79 @@
-# Prerequisites
-*.d
+# Build output
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+bin/
+obj/
 
-# Linker output
-*.ilk
-*.map
-*.exp
+# Visual Studio user and workspace files
 
-# Precompiled Headers
-*.gch
-*.pch
+.vs/
+\*.suo
+\*.user
+\*.userosscache
+\*.sln.docstates
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+# VS Code workspace
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
+.vscode/
 
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
+# Rider IDE
 
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
+.idea/
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
+# Generated code
+
+Generated\_Code/
+
+# Logs
+
+\*.log
+
+# OS files
+
+.DS\_Store
+Thumbs.db
+
+# NuGet
+
+\*.nupkg
+\*.snupkg
+packages/
+.nuget/
+
+# dotnet publish output
+
+\*.publish/
+
+# Global JSON SDK settings
+
+global.json
+
+# Misc files
+
+\*.dbmdl
+\*.cache
+\*.bak
+\*.tmp
+
+# ASP.NET Scaffolding
+
+ScaffoldingReadMe.txt
+
+# Azure and test results
+
+.coverage
+\*.coverage
+coverage.opencover.xml
+TestResults/
+
+# JetBrains Rider local history
+
+.idea/.idea.\*
+
+# Resharper
+
+\_ReSharper\*/
+\*.\[Rr]e\[Ss]harper
+
+# DotCover
+
+\*.dotCover
