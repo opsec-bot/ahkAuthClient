@@ -5,7 +5,7 @@ namespace GagAuthClient
     class Program
     {
         // Configuration
-        private const string BaseUrl = "http://localhost:3000/"; // Change to your server URL
+        private const string BaseUrl = "http://localhost:3000/"; // Change to your server URL (make sure to end in slash)
 
         static async Task Main()
         {
@@ -68,17 +68,19 @@ namespace GagAuthClient
 
         private static async Task<string?> AuthenticateUser()
         {
-            var saved = Settings.Load();
+            var (savedUser, savedPass) = Settings.Load();
             var auth = new Authentication();
+
             if (
-                !string.IsNullOrEmpty(saved)
-                && await auth.LocalCheck(saved, BaseUrl)
-                && await auth.ServerCheck(saved, BaseUrl)
+                !string.IsNullOrEmpty(savedUser)
+                && !string.IsNullOrEmpty(savedPass)
+                && await auth.LocalCheck(savedUser, BaseUrl)
+                && (await auth.ServerCheck(savedUser, savedPass, BaseUrl))?.HwidMatch == true
             )
             {
                 Console.Clear();
-                Console.WriteLine($"[✓] Welcome back {saved}!");
-                return saved;
+                Console.WriteLine($"[✓] Welcome back {savedUser}!");
+                return savedUser;
             }
 
             Settings.Delete();
@@ -88,6 +90,23 @@ namespace GagAuthClient
             if (string.IsNullOrEmpty(user))
                 return null;
 
+            bool userExists = await auth.UsernameExists(user, BaseUrl);
+            string? pass;
+
+            if (!userExists)
+            {
+                Console.Write("Set a password: ");
+                pass = Console.ReadLine()?.Trim();
+            }
+            else
+            {
+                Console.Write("Enter your password: ");
+                pass = Console.ReadLine()?.Trim();
+            }
+
+            if (string.IsNullOrEmpty(pass))
+                return null;
+
             // Check GamePass ownership
             if (!await auth.LocalCheck(user, BaseUrl))
             {
@@ -95,15 +114,52 @@ namespace GagAuthClient
                 return null;
             }
 
-            // Check against the server
-            if (!await auth.ServerCheck(user, BaseUrl))
+            // Full server-side check
+            var serverResult = await auth.ServerCheck(user, pass, BaseUrl);
+            if (serverResult == null)
             {
-                Console.Error.WriteLine("[!] Mismatched HWID.");
+                Console.Error.WriteLine("[X] Server error.");
                 return null;
             }
 
-            Settings.Save(user);
-            Console.WriteLine($"[✓] Sucessfully authenticated welcome {user}!");
+            if (!serverResult.Exists)
+            {
+                Console.Error.WriteLine("[!] Account creation failed.");
+                return null;
+            }
+
+            if (!serverResult.PasswordMatch)
+            {
+                Console.Error.WriteLine("[!] Wrong password.");
+                return null;
+            }
+
+            if (!serverResult.HwidMatch)
+            {
+                Console.Clear();
+                Console.Error.WriteLine("[!] HWID does not match.");
+                Console.Write("Would you like to reset your HWID? (y/n): ");
+                var choice = Console.ReadLine()?.Trim().ToLower();
+
+                if (choice == "y")
+                {
+                    if (await auth.HWIDReset(user, pass, BaseUrl))
+                    {
+                        Environment.Exit(0);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+
+                Console.WriteLine("[*] HWID reset cancelled.");
+                return null;
+            }
+
+            Settings.Save(user, pass);
+            Console.Clear();
+            Console.WriteLine($"[✓] Successfully authenticated. Welcome {user}!");
             return user;
         }
     }

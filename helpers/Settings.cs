@@ -4,16 +4,31 @@ public static class Settings
 {
     private const string SettingsFile = "settings.json";
 
-    public static string Load() =>
-        File.Exists(SettingsFile)
-            ? JsonDocument
-                .Parse(File.ReadAllText(SettingsFile))
-                .RootElement.GetProperty("verified_user")
-                .GetString()!
-            : string.Empty;
+    public static (string Username, string Password) Load()
+    {
+        if (!File.Exists(SettingsFile))
+            return (string.Empty, string.Empty);
 
-    public static void Save(string user) =>
-        File.WriteAllText(SettingsFile, JsonSerializer.Serialize(new { verified_user = user }));
+        var doc = JsonDocument.Parse(File.ReadAllText(SettingsFile));
+        var root = doc.RootElement;
 
-    public static void Delete() => File.Delete(SettingsFile);
+        string user = root.TryGetProperty("verified_user", out var uProp)
+            ? uProp.GetString() ?? ""
+            : "";
+        string pass = root.TryGetProperty("password", out var pProp) ? pProp.GetString() ?? "" : "";
+
+        return (user, pass);
+    }
+
+    public static void Save(string user, string password)
+    {
+        var obj = new { verified_user = user, password = password };
+        File.WriteAllText(SettingsFile, JsonSerializer.Serialize(obj));
+    }
+
+    public static void Delete()
+    {
+        if (File.Exists(SettingsFile))
+            File.Delete(SettingsFile);
+    }
 }
