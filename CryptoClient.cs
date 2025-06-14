@@ -1,10 +1,7 @@
-﻿using System;
-using System.Net.Http;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 public class CryptoClient: IDisposable 
 {
@@ -43,7 +40,7 @@ public class CryptoClient: IDisposable
 
         return Convert.ToBase64String(clientPubBytes);
     }
-    public async Task < string > InitHandshakeAsync() 
+    public async Task < string > InitHandshake() 
   {
     var resp = await _http.PostAsync(
       $"{_baseUrl}/exchange/init",
@@ -72,7 +69,7 @@ public class CryptoClient: IDisposable
     return sessionId;
   }
 
-  public async Task < string > FinishHandshakeAsync(string sessionId) 
+  public async Task < string > EstablishHandshake(string sessionId) 
   {
     var payload = JsonSerializer.Serialize(new {
       sessionId,
@@ -91,7 +88,7 @@ public class CryptoClient: IDisposable
     return Convert.ToBase64String(sharedKey);
   }
 
-    public async Task<(byte[] encrypted, byte[] iv, byte[] tag)> FetchEncryptedScriptAsync(string sessionId)
+    public async Task<(byte[] encrypted, byte[] iv, byte[] tag)> FetchEncryptedScript(string sessionId)
     {
         var resp = await _http.GetAsync($"{_baseUrl}/script/{sessionId}");
         resp.EnsureSuccessStatusCode();

@@ -16,7 +16,7 @@ public static class Launcher
         process.StandardInput.Close();
 
     }
-    public static async Task RunSpinnerUntil(Task task, string message = "[*] Working")
+    public static async Task StartSpinner(Task task, string message = "[*] Working")
     {
         var spinner = new[] { "|", "/", "-", "\\" };
         var fillerMessages = new[]

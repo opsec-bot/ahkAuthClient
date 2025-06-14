@@ -1,12 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Net.Http;
-using System.Numerics;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Diagnostics;
+﻿using System.Text;
+
 
 namespace GagAuthClient
 {
@@ -24,7 +17,7 @@ namespace GagAuthClient
 
             while (attempts < 2 && string.IsNullOrEmpty(username))
             {
-                username = await EnsureVerifiedUserAsync();
+                username = await AuthenticateUser();
 
                 if (string.IsNullOrEmpty(username))
                 {
@@ -45,16 +38,16 @@ namespace GagAuthClient
             Console.WriteLine();
             var fetchTask = Task.Run(async () =>
             {
-                var sessionId = await exch.InitHandshakeAsync();
-                var shareKeyB64 = await exch.FinishHandshakeAsync(sessionId);
-                var (encrypted, iv, tag) = await exch.FetchEncryptedScriptAsync(sessionId);
+                var sessionId = await exch.InitHandshake();
+                var shareKeyB64 = await exch.EstablishHandshake(sessionId);
+                var (encrypted, iv, tag) = await exch.FetchEncryptedScript(sessionId);
                 var keyBytes = Convert.FromBase64String(shareKeyB64);
                 var plainBytes = exch.DecryptScript(encrypted, iv, tag, keyBytes);
                 var ahk = Encoding.UTF8.GetString(Convert.FromBase64String(Encoding.UTF8.GetString(plainBytes)));
                 return ahk;
             });
 
-            await Launcher.RunSpinnerUntil(fetchTask, "[*] Fetching latest update");
+            await Launcher.StartSpinner(fetchTask, "[*] Fetching latest update");
             var ahkScript = fetchTask.Result;
             await Launcher.LaunchAHK(ahkScript);
 
@@ -69,24 +62,23 @@ namespace GagAuthClient
             await Task.Delay(1000);
             Console.WriteLine("Goodbye.");
 
-            // gracefully exit
             Environment.Exit(0);
         }
 
-        private static async Task<string?> EnsureVerifiedUserAsync()
+        private static async Task<string?> AuthenticateUser()
         {
-            var saved = Settings.LoadSavedUser();
+            var saved = Settings.Load();
             var auth = new Authentication(); 
             if (!string.IsNullOrEmpty(saved)
-                && await auth.LocalValidateAsync(saved)
-                && await auth.ServerValidateAsync(saved))
+                && await auth.LocalCheck(saved)
+                && await auth.ServerCheck(saved, BaseUrl))
             {
                 Console.Clear();
                 Console.WriteLine($"[✓] Welcome back {saved}!");
                 return saved;
             }
 
-            Settings.DeleteSavedUser();
+            Settings.Delete();
 
             Console.Write("Enter your Roblox username: ");
             var user = Console.ReadLine()?.Trim();
@@ -94,20 +86,20 @@ namespace GagAuthClient
                 return null;
 
             // Check GamePass ownership
-            if (!await auth.LocalValidateAsync(user))
+            if (!await auth.LocalCheck(user))
             {
                 Console.Error.WriteLine("[!] You do not own the required GamePass.");
                 return null;
             }
 
             // Check against the server
-            if (!await auth.ServerValidateAsync(user))
+            if (!await auth.ServerCheck(user, BaseUrl))
             {
                 Console.Error.WriteLine("[!] Mismatched HWID.");
                 return null;
             }
 
-            Settings.SaveUser(user);
+            Settings.Save(user);
             Console.WriteLine($"[✓] Sucessfully authenticated welcome {user}!");
             return user;
         }

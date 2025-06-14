@@ -1,12 +1,10 @@
-﻿using System;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 
 public class Authentication
 {
-    private const string VerifyEndpoint = "http://localhost:3000/verify";
     private static readonly string[] GamePassIds = { "234738190" };
-    public async Task<bool> OwnsGamePassAsync(string userId, string gpId)
+    private async Task<bool> VerifyHasGamepass(string userId, string gpId)
      {
             using var client = new HttpClient();
             var resp = await client.GetAsync($"https://inventory.roblox.com/v1/users/{userId}/items/GamePass/{gpId}");
@@ -14,27 +12,8 @@ public class Authentication
             var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
             return doc.RootElement.GetProperty("data").GetArrayLength() > 0;
      }
-public async Task<bool> LocalValidateAsync(string user)
-    {
-        using var client = new HttpClient();
-        var uid = await GetUserIdAsync(client, user);
-        if (uid == null) return false;
-        foreach (var gp in GamePassIds)
-            if (await OwnsGamePassAsync(uid, gp)) return true;
-        return false;
-    }
 
-    public async Task<bool> ServerValidateAsync(string user)
-    {
-        var comp = Environment.MachineName;
-        using var client = new HttpClient();
-        var url = $"{VerifyEndpoint}?username={Uri.EscapeDataString(user)}&hwid={Hwid.GetHWID()}";
-        var resp = await client.GetAsync(url);
-        if (!resp.IsSuccessStatusCode) return false;
-        var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-        return doc.RootElement.GetProperty("matched").GetBoolean();
-    }
-    private async Task<string?> GetUserIdAsync(HttpClient client, string username)
+    private async Task<string?> FetchUserid(HttpClient client, string username)
     {
         var payload = JsonSerializer.Serialize(new { usernames = new[] { username }, excludeBannedUsers = true });
         var resp = await client.PostAsync(
@@ -56,5 +35,25 @@ public async Task<bool> LocalValidateAsync(string user)
         };
 
         return userId;
+    }
+    public async Task<bool> LocalCheck(string user)
+    {
+        using var client = new HttpClient();
+        var uid = await FetchUserid(client, user);
+        if (uid == null) return false;
+        foreach (var gp in GamePassIds)
+            if (await VerifyHasGamepass(uid, gp)) return true;
+        return false;
+    }
+
+    public async Task<bool> ServerCheck(string user, string baseURL)
+    {
+        var comp = Environment.MachineName;
+        using var client = new HttpClient();
+        var url = $"{baseURL}verify?username={Uri.EscapeDataString(user)}&hwid={Hwid.GetHWID()}";
+        var resp = await client.GetAsync(url);
+        if (!resp.IsSuccessStatusCode) return false;
+        var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+        return doc.RootElement.GetProperty("matched").GetBoolean();
     }
 }
