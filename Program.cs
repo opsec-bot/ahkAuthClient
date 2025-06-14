@@ -1,6 +1,5 @@
 ﻿using System.Text;
 
-
 namespace GagAuthClient
 {
     class Program
@@ -43,7 +42,9 @@ namespace GagAuthClient
                 var (encrypted, iv, tag) = await exch.FetchEncryptedScript(sessionId);
                 var keyBytes = Convert.FromBase64String(shareKeyB64);
                 var plainBytes = exch.DecryptScript(encrypted, iv, tag, keyBytes);
-                var ahk = Encoding.UTF8.GetString(Convert.FromBase64String(Encoding.UTF8.GetString(plainBytes)));
+                var ahk = Encoding.UTF8.GetString(
+                    Convert.FromBase64String(Encoding.UTF8.GetString(plainBytes))
+                );
                 return ahk;
             });
 
@@ -68,10 +69,12 @@ namespace GagAuthClient
         private static async Task<string?> AuthenticateUser()
         {
             var saved = Settings.Load();
-            var auth = new Authentication(); 
-            if (!string.IsNullOrEmpty(saved)
+            var auth = new Authentication();
+            if (
+                !string.IsNullOrEmpty(saved)
                 && await auth.LocalCheck(saved, BaseUrl)
-                && await auth.ServerCheck(saved, BaseUrl))
+                && await auth.ServerCheck(saved, BaseUrl)
+            )
             {
                 Console.Clear();
                 Console.WriteLine($"[✓] Welcome back {saved}!");

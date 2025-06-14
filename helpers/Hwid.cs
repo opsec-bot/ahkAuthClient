@@ -10,7 +10,7 @@ public static class Hwid
         {
             RedirectStandardOutput = true,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
         };
         using var proc = Process.Start(psi)!;
         string output = proc.StandardOutput.ReadToEnd();
@@ -23,7 +23,8 @@ public static class Hwid
         using var sha = SHA256.Create();
         byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(data));
         var sb = new StringBuilder();
-        foreach (var b in hash) sb.Append(b.ToString("x2"));
+        foreach (var b in hash)
+            sb.Append(b.ToString("x2"));
         return sb.ToString();
     }
 
@@ -35,7 +36,10 @@ public static class Hwid
         string uuid = uuidLines.Length > 1 ? uuidLines[1].Trim() : "";
 
         // 2) Windows MachineGuid
-        string rawGuid = Exec("reg", "query HKLM\\SOFTWARE\\Microsoft\\Cryptography /v MachineGuid");
+        string rawGuid = Exec(
+            "reg",
+            "query HKLM\\SOFTWARE\\Microsoft\\Cryptography /v MachineGuid"
+        );
         var parts = rawGuid.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         string machineGuid = parts.Length >= 3 ? parts[^1] : "";
 
