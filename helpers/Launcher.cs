@@ -5,9 +5,9 @@ using System.Reflection;
 public static class Launcher
 {
     private static string[] AHKPaths = new[]
-        {
+    {
         @"C:\Program Files\AutoHotkey\AutoHotkeyU64.exe",
-        @"C:\Program Files\AutoHotkey\v1.1.37.02\AutoHotkeyU64.exe"
+        @"C:\Program Files\AutoHotkey\v1.1.37.02\AutoHotkeyU64.exe",
     };
 
     private static string AHKInstallerUrl = "https://www.autohotkey.com/download/ahk-install.exe";
@@ -37,27 +37,36 @@ public static class Launcher
             {
                 var response = await httpClient.GetAsync(AHKInstallerUrl);
                 response.EnsureSuccessStatusCode();
-                await using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await using var fileStream = new FileStream(
+                    tempPath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.None
+                );
                 await response.Content.CopyToAsync(fileStream);
             }
 
-            var installProc = Process.Start(new ProcessStartInfo
-            {
-                FileName = tempPath,
-                Arguments = "/S",
-                UseShellExecute = true
-            });
+            var installProc = Process.Start(
+                new ProcessStartInfo
+                {
+                    FileName = tempPath,
+                    Arguments = "/S",
+                    UseShellExecute = true,
+                }
+            );
             installProc.WaitForExit();
 
             //  Restart self
             string exePath = Assembly.GetExecutingAssembly().Location;
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "cmd",
-                Arguments = $"/c start \"\" \"{exePath}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false
-            });
+            Process.Start(
+                new ProcessStartInfo
+                {
+                    FileName = "cmd",
+                    Arguments = $"/c start \"\" \"{exePath}\"",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                }
+            );
 
             Environment.Exit(0); // Kill old process
             return;
@@ -66,7 +75,7 @@ public static class Launcher
         var psi = new ProcessStartInfo(ahkPath, "*")
         {
             UseShellExecute = false,
-            RedirectStandardInput = true
+            RedirectStandardInput = true,
         };
 
         using var process = Process.Start(psi)!;
@@ -74,7 +83,7 @@ public static class Launcher
         process.StandardInput.Close();
     }
 
-public static async Task StartSpinner(Task task, string message = "[*] Working")
+    public static async Task StartSpinner(Task task, string message = "[*] Working")
     {
         var spinner = new[] { "|", "/", "-", "\\" };
         var fillerMessages = new[]
