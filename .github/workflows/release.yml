@@ -12,7 +12,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Ensure we can access all tags and history
+        fetch-depth: 0  # Important for fetching tags
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -61,6 +61,10 @@ jobs:
         files: ./bin/Release/net8.0-windows/release.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+    - name: Configure Git for push
+      run: |
+        git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}
 
     - name: Push new tag
       run: |
