@@ -1,18 +1,16 @@
-name: .NET (Windows Only)
+name: .NET (Windows Build + Release)
 
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 jobs:
-  build:
-
+  build-and-release:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout source
+      uses: actions/checkout@v4
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -29,10 +27,37 @@ jobs:
       run: dotnet test --no-build --verbosity normal
 
     - name: Publish (win-x64, self-contained, trimmed)
-      run: dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
+      run: dotnet publish Grow_A_Garden_Auth.csproj -c Release -r win-x64 --self-contained true -f net8.0-windows /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
 
-    - name: Upload published app
-      uses: actions/upload-artifact@v4
+    - name: Zip published output
+      run: |
+        cd ./bin/Release/net8.0-windows/win-x64/publish
+        powershell Compress-Archive -Path * -DestinationPath ../../../release.zip
+
+    - name: Get latest tag
+      id: get_version
+      run: |
+        git fetch --tags
+        $latestTag = git describe --tags --abbrev=0
+        $parts = $latestTag.TrimStart("v").Split(".")
+        $major = [int]$parts[0]
+        $minor = [int]$parts[1]
+        $patch = [int]$parts[2] + 1
+        $newTag = "v$major.$minor.$patch"
+        echo "new_tag=$newTag" >> $env:GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: published-app
-        path: ./bin/Release/net8.0/win-x64/publish/
+        tag_name: ${{ steps.get_version.outputs.new_tag }}
+        name: Release ${{ steps.get_version.outputs.new_tag }}
+        files: ./bin/Release/net8.0-windows/release.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Push new tag
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git tag ${{ steps.get_version.outputs.new_tag }}
+        git push origin ${{ steps.get_version.outputs.new_tag }}
