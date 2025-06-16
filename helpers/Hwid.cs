@@ -25,12 +25,16 @@ public static class Hwid
         try
         {
             // 1) BIOS UUID
-            using var searcher1 = new ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
+            using var searcher1 = new ManagementObjectSearcher(
+                "SELECT UUID FROM Win32_ComputerSystemProduct"
+            );
             foreach (var obj in searcher1.Get())
                 uuid = obj["UUID"]?.ToString()?.Trim() ?? "";
 
             // 2) Disk Serial Number
-            using var searcher2 = new ManagementObjectSearcher("SELECT SerialNumber FROM Win32_DiskDrive");
+            using var searcher2 = new ManagementObjectSearcher(
+                "SELECT SerialNumber FROM Win32_DiskDrive"
+            );
             foreach (var obj in searcher2.Get())
             {
                 diskSerial = obj["SerialNumber"]?.ToString()?.Trim() ?? "";
@@ -38,7 +42,9 @@ public static class Hwid
             }
 
             // 3) Motherboard Serial Number
-            using var searcher3 = new ManagementObjectSearcher("SELECT SerialNumber FROM Win32_BaseBoard");
+            using var searcher3 = new ManagementObjectSearcher(
+                "SELECT SerialNumber FROM Win32_BaseBoard"
+            );
             foreach (var obj in searcher3.Get())
                 boardSerial = obj["SerialNumber"]?.ToString()?.Trim() ?? "";
 

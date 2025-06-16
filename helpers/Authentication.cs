@@ -221,5 +221,4 @@ public class Authentication
 
         return password.ToString();
     }
-
 }
