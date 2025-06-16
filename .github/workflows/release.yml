@@ -12,7 +12,7 @@ jobs:
     - name: Checkout source
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Required to access all tags and full history
+        fetch-depth: 0  # Ensure we can access all tags and history
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -33,8 +33,7 @@ jobs:
 
     - name: Zip published output
       run: |
-        cd ./bin/Release/net8.0-windows/win-x64/publish
-        powershell Compress-Archive -Path * -DestinationPath ../../../release.zip
+        powershell Compress-Archive -Path "./bin/Release/net8.0-windows/win-x64/publish/*" -DestinationPath "./bin/Release/net8.0-windows/release.zip"
 
     - name: Get latest tag and generate next version
       id: get_version
@@ -61,7 +60,7 @@ jobs:
         name: Release ${{ steps.get_version.outputs.new_tag }}
         files: ./bin/Release/net8.0-windows/release.zip
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
     - name: Push new tag
       run: |
