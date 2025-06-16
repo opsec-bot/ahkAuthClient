@@ -191,4 +191,35 @@ public class Authentication
         Console.Error.WriteLine("[X] Unexpected error while resetting HWID.");
         return false;
     }
+
+    public static string ReadPassword()
+    {
+        var password = new StringBuilder();
+        ConsoleKeyInfo key;
+
+        while (true)
+        {
+            key = Console.ReadKey(intercept: true);
+
+            if (key.Key == ConsoleKey.Enter)
+            {
+                Console.WriteLine();
+                break;
+            }
+
+            if (key.Key == ConsoleKey.Backspace && password.Length > 0)
+            {
+                password.Length--;
+                Console.Write("\b \b");
+            }
+            else if (!char.IsControl(key.KeyChar))
+            {
+                password.Append(key.KeyChar);
+                Console.Write("*");
+            }
+        }
+
+        return password.ToString();
+    }
+
 }

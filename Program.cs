@@ -96,12 +96,12 @@ namespace GagAuthClient
             if (!userExists)
             {
                 Console.Write("Set a password: ");
-                pass = Console.ReadLine()?.Trim();
+                pass = Authentication.ReadPassword();
             }
             else
             {
                 Console.Write("Enter your password: ");
-                pass = Console.ReadLine()?.Trim();
+                pass = Authentication.ReadPassword();
             }
 
             if (string.IsNullOrEmpty(pass))
