@@ -5,7 +5,7 @@ using GagAuthClient.Models;
 
 public class Authentication
 {
-    private static readonly string[] GamePassIds = { "922424337" }; // Update Idea: fetch ID's from API
+    private static readonly string[] GamePassIds = { "your_gamepass_id" }; // Update Idea: fetch ID's from API
 
     private async Task<bool> VerifyHasGamepass(string userId, string gpId)
     {
