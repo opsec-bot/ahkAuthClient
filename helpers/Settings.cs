@@ -25,11 +25,7 @@ public static class Settings
     {
         var obj = new User { verified_user = user, password = password };
 
-        var json = JsonSerializer.Serialize(
-            obj,
-            (System.Text.Json.Serialization.Metadata.JsonTypeInfo<User>)
-                AppJsonContext.Default.VerifiedUserWithPassword
-        );
+        var json = JsonSerializer.Serialize(obj, AppJsonContext.Default.User);
         File.WriteAllText(SettingsFile, json);
     }
 
