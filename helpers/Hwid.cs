@@ -1,23 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System.Management;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Win32;
 
 public static class Hwid
 {
-    private static string Exec(string fileName, string arguments)
-    {
-        var psi = new ProcessStartInfo(fileName, arguments)
-        {
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        using var proc = Process.Start(psi)!;
-        string output = proc.StandardOutput.ReadToEnd();
-        proc.WaitForExit();
-        return output.Trim();
-    }
-
     private static string Sha256Hex(string data)
     {
         using var sha = SHA256.Create();
@@ -30,30 +17,40 @@ public static class Hwid
 
     public static string GetHWID()
     {
-        // 1) BIOS UUID
-        string rawUuid = Exec("wmic", "csproduct get UUID");
-        var uuidLines = rawUuid.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        string uuid = uuidLines.Length > 1 ? uuidLines[1].Trim() : "";
+        string uuid = "";
+        string diskSerial = "";
+        string boardSerial = "";
+        string machineGuid = "";
 
-        // 2) Windows MachineGuid
-        string rawGuid = Exec(
-            "reg",
-            "query HKLM\\SOFTWARE\\Microsoft\\Cryptography /v MachineGuid"
-        );
-        var parts = rawGuid.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        string machineGuid = parts.Length >= 3 ? parts[^1] : "";
+        try
+        {
+            // 1) BIOS UUID
+            using var searcher1 = new ManagementObjectSearcher("SELECT UUID FROM Win32_ComputerSystemProduct");
+            foreach (var obj in searcher1.Get())
+                uuid = obj["UUID"]?.ToString()?.Trim() ?? "";
 
-        // 3) Disk serial
-        string rawDisk = Exec("wmic", "diskdrive get serialnumber");
-        var diskLines = rawDisk.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        string diskSerial = diskLines.Length > 1 ? diskLines[1].Trim() : "";
+            // 2) Disk Serial Number
+            using var searcher2 = new ManagementObjectSearcher("SELECT SerialNumber FROM Win32_DiskDrive");
+            foreach (var obj in searcher2.Get())
+            {
+                diskSerial = obj["SerialNumber"]?.ToString()?.Trim() ?? "";
+                break;
+            }
 
-        // 4) Motherboard serial
-        string rawBoard = Exec("wmic", "baseboard get serialnumber");
-        var boardLines = rawBoard.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        string boardSerial = boardLines.Length > 1 ? boardLines[1].Trim() : "";
+            // 3) Motherboard Serial Number
+            using var searcher3 = new ManagementObjectSearcher("SELECT SerialNumber FROM Win32_BaseBoard");
+            foreach (var obj in searcher3.Get())
+                boardSerial = obj["SerialNumber"]?.ToString()?.Trim() ?? "";
 
-        // 5) Combine and hash into HWID
+            // 4) MachineGuid from registry
+            using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
+            machineGuid = key?.GetValue("MachineGuid")?.ToString() ?? "";
+        }
+        catch
+        {
+            // Handle errors if needed
+        }
+
         string concatenated = $"{uuid}:{machineGuid}:{diskSerial}:{boardSerial}";
         return Sha256Hex(concatenated);
     }
