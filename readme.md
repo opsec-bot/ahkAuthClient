@@ -23,14 +23,24 @@ A C# loader that authenticates a Roblox username via GamePass and HWID, securely
 
 ### 🛠️ How to Build
 
+dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
+
 ```bash
-dotnet build -c Release
-````
+dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=true
+```
+
+This will generate a single `.exe` in:
+
+```bash
+./bin/Release/net8.0-windows/win-x64/publish
+```
+
+> might be net8.0 not net8.0-windows
 
 To run:
 
 ```bash
-start ./bin/Release/net8.0-windows/Grow_A_Garden_Auth.exe
+start /bin/Release/net8.0-windows/win-x64/publish/Grow_A_Garden_Auth.exe
 ```
 
 ---
@@ -39,13 +49,13 @@ start ./bin/Release/net8.0-windows/Grow_A_Garden_Auth.exe
 
 Before building, make sure to update:
 
-* **Base URL** in `Program.cs`:
+- **Base URL** in `Program.cs`:
 
   ```csharp
   private const string BaseUrl = "<your_url>";
   ```
 
-* **GamePass ID** in `Authentication.cs`:
+- **GamePass ID** in `Authentication.cs`:
 
   ```csharp
   private static readonly string[] GamePassIds = { "your_gamepass_id_here" };
