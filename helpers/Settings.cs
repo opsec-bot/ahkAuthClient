@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using GagAuthClient.Models;
 
 public static class Settings
 {
@@ -22,8 +23,14 @@ public static class Settings
 
     public static void Save(string user, string password)
     {
-        var obj = new { verified_user = user, password = password };
-        File.WriteAllText(SettingsFile, JsonSerializer.Serialize(obj));
+        var obj = new User { verified_user = user, password = password };
+
+        var json = JsonSerializer.Serialize(
+            obj,
+            (System.Text.Json.Serialization.Metadata.JsonTypeInfo<User>)
+                AppJsonContext.Default.VerifiedUserWithPassword
+        );
+        File.WriteAllText(SettingsFile, json);
     }
 
     public static void Delete()

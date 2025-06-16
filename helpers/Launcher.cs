@@ -14,7 +14,7 @@ public static class Launcher
 
     public static async Task LaunchAHK(string script)
     {
-        string ahkPath = null;
+        string? ahkPath = null;
 
         foreach (var path in AHKPaths)
         {
@@ -53,7 +53,15 @@ public static class Launcher
                     UseShellExecute = true,
                 }
             );
-            installProc.WaitForExit();
+
+            if (installProc != null)
+            {
+                installProc.WaitForExit();
+            }
+            else
+            {
+                throw new InvalidOperationException("Failed to start the installer process.");
+            }
 
             //  Restart self
             string exePath = Assembly.GetExecutingAssembly().Location;

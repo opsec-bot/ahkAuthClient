@@ -5,7 +5,7 @@ namespace GagAuthClient
     class Program
     {
         // Configuration
-        private const string BaseUrl = "http://localhost:3000/"; // Change to your server URL (make sure to end in slash)
+        private const string BaseUrl = "http://159.89.89.27:3000/"; // Change to your server URL (make sure to end in slash)
 
         static async Task Main()
         {

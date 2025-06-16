@@ -1,10 +1,11 @@
 ﻿using System.Net;
 using System.Text;
 using System.Text.Json;
+using GagAuthClient.Models;
 
 public class Authentication
 {
-    private static readonly string[] GamePassIds = { "<your_gamepass_id_here>" }; // Update Idea: fetch ID's from API
+    private static readonly string[] GamePassIds = { "922424337" }; // Update Idea: fetch ID's from API
 
     private async Task<bool> VerifyHasGamepass(string userId, string gpId)
     {
@@ -20,9 +21,17 @@ public class Authentication
 
     private async Task<string?> FetchUserid(HttpClient client, string username)
     {
+        var obj = new UserQueryPayload
+        {
+            usernames = new[] { username },
+            excludeBannedUsers = true,
+        };
+
         var payload = JsonSerializer.Serialize(
-            new { usernames = new[] { username }, excludeBannedUsers = true }
+            obj,
+            jsonTypeInfo: AppJsonContext.Default.UserQueryPayload
         );
+
         var resp = await client.PostAsync(
             "https://users.roblox.com/v1/usernames/users",
             new StringContent(payload, Encoding.UTF8, "application/json")
@@ -130,15 +139,14 @@ public class Authentication
     public async Task<bool> HWIDReset(string user, string pass, string baseURL)
     {
         using var client = new HttpClient();
+        var payload = new HwidPayload
+        {
+            username = user,
+            password = pass,
+            newHwid = Hwid.GetHWID(),
+        };
         var content = new StringContent(
-            JsonSerializer.Serialize(
-                new
-                {
-                    username = user,
-                    password = pass,
-                    newHwid = Hwid.GetHWID(),
-                }
-            ),
+            JsonSerializer.Serialize(payload, AppJsonContext.Default.HwidPayload),
             Encoding.UTF8,
             "application/json"
         );

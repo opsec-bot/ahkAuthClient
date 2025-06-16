@@ -2,6 +2,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using GagAuthClient.Models;
 
 public class CryptoClient : IDisposable
 {
@@ -72,9 +73,14 @@ public class CryptoClient : IDisposable
 
     public async Task<string> EstablishHandshake(string sessionId)
     {
-        var payload = JsonSerializer.Serialize(
-            new { sessionId, clientPub = GetClientPublicBase64() }
-        );
+        var obj = new ExchangePayload
+        {
+            sessionId = sessionId,
+            clientPub = GetClientPublicBase64(),
+        };
+
+        var payload = JsonSerializer.Serialize(obj, AppJsonContext.Default.ExchangePayload);
+
         var resp = await _http.PostAsync(
             $"{_baseUrl}/exchange/finish",
             new StringContent(payload, Encoding.UTF8, "application/json")
