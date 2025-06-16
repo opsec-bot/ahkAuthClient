@@ -86,8 +86,20 @@ public static class Launcher
         };
 
         using var process = Process.Start(psi)!;
-        await process.StandardInput.WriteAsync(script);
-        process.StandardInput.Close();
+        try
+        {
+            await process.StandardInput.WriteAsync(script);
+            process.StandardInput.Close();
+        }
+        catch (IOException ex)
+        {
+            // Log and continue if AHK process closes the pipe (crashes or exits early)
+            Console.Clear();
+            Console.WriteLine($"[!] Warning: AutoHotkey process closed unexpectedly: {ex.Message}");
+            Console.WriteLine("Press any key to quit.");
+            Console.ReadKey();
+            Environment.Exit(1);
+        }
     }
 
     public static async Task StartSpinner(Task task, string message = "[*] Working")
