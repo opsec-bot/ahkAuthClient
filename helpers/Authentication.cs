@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using GagAuthClient.Models;
+using libc.hwid;
 
 public class Authentication
 {
@@ -109,7 +110,7 @@ public class Authentication
         }
 
         var url =
-            $"{baseURL}/verify?username={Uri.EscapeDataString(user)}&password={Uri.EscapeDataString(pass)}&hwid={Hwid.GetHWID()}";
+            $"{baseURL}/verify?username={Uri.EscapeDataString(user)}&password={Uri.EscapeDataString(pass)}&hwid={HwId.Generate()}";
         var resp = await client.GetAsync(url);
         if (!resp.IsSuccessStatusCode)
             return null;
@@ -144,7 +145,7 @@ public class Authentication
         {
             username = user,
             password = pass,
-            newHwid = Hwid.GetHWID(),
+            newHwid = HwId.Generate(),
         };
         var content = new StringContent(
             JsonSerializer.Serialize(payload, AppJsonContext.Default.HwidPayload),
