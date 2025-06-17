@@ -26,7 +26,9 @@ namespace GagAuthClient
 
                 if (serverVersion != LoaderVersion)
                 {
-                    Console.Error.WriteLine($"[!] New release available (v{serverVersion}). Please update your loader.");
+                    Console.Error.WriteLine(
+                        $"[!] New release available (v{serverVersion}). Please update your loader."
+                    );
                     Console.WriteLine("Press any key to exit...");
                     Console.ReadKey();
                     return;
