@@ -5,7 +5,7 @@ namespace GagAuthClient
     class Program
     {
         // Configuration
-        private const string BaseUrl = "http://<your_server_ip>:3000/"; // Change to your server IP
+        private const string BaseUrl = "http://localhost:3000"; // Change to your server IP
 
         static async Task Main()
         {
@@ -74,7 +74,7 @@ namespace GagAuthClient
             if (
                 !string.IsNullOrEmpty(savedUser)
                 && !string.IsNullOrEmpty(savedPass)
-                && await auth.LocalCheck(savedUser, BaseUrl)
+                && await auth.InitalCheck(savedUser, BaseUrl)
                 && (await auth.ServerCheck(savedUser, savedPass, BaseUrl))?.HwidMatch == true
             )
             {
@@ -108,7 +108,7 @@ namespace GagAuthClient
                 return null;
 
             // Check GamePass ownership
-            if (!await auth.LocalCheck(user, BaseUrl))
+            if (!await auth.InitalCheck(user, BaseUrl))
             {
                 Console.Error.WriteLine("[!] You do not own the required GamePass.");
                 return null;

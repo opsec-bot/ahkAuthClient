@@ -5,20 +5,6 @@ using GagAuthClient.Models;
 
 public class Authentication
 {
-    private static readonly string[] GamePassIds = { "your_gamepass_id" }; // Update Idea: fetch ID's from API
-
-    private async Task<bool> VerifyHasGamepass(string userId, string gpId)
-    {
-        using var client = new HttpClient();
-        var resp = await client.GetAsync(
-            $"https://inventory.roblox.com/v1/users/{userId}/items/GamePass/{gpId}"
-        );
-        if (!resp.IsSuccessStatusCode)
-            return false;
-        var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-        return doc.RootElement.GetProperty("data").GetArrayLength() > 0;
-    }
-
     private async Task<string?> FetchUserid(HttpClient client, string username)
     {
         var obj = new UserQueryPayload
@@ -55,12 +41,11 @@ public class Authentication
         return userId;
     }
 
-    public async Task<bool> LocalCheck(string user, string baseURL)
+    public async Task<bool> InitalCheck(string user, string baseURL)
     {
-        using var client = new HttpClient();
-
         try
         {
+            using var client = new HttpClient();
             var pingResp = await client.GetAsync($"{baseURL}");
             if (!pingResp.IsSuccessStatusCode)
                 throw new HttpRequestException();
@@ -73,13 +58,29 @@ public class Authentication
             Environment.Exit(0);
         }
 
-        var uid = await FetchUserid(client, user);
+        var uid = await FetchUserid(new HttpClient(), user);
         if (uid == null)
+        {
             return false;
-        foreach (var gp in GamePassIds)
-            if (await VerifyHasGamepass(uid, gp))
-                return true;
-        return false;
+        }
+
+        using var crypto = new CryptoClient(baseURL);
+        var sessionId = await crypto.InitHandshake();
+
+        var sharedKey = Convert.FromBase64String(await crypto.EstablishHandshake(sessionId));
+
+        using var verifyClient = new HttpClient();
+        var verifyResp = await verifyClient.GetAsync($"{baseURL}/check-pass/{uid}");
+
+        if (!verifyResp.IsSuccessStatusCode)
+        {
+            return false;
+        }
+
+        using var doc = JsonDocument.Parse(await verifyResp.Content.ReadAsStringAsync());
+        bool owns = doc.RootElement.GetProperty("ownsPass").GetBoolean();
+
+        return owns;
     }
 
     public class ServerCheckResult
@@ -108,7 +109,7 @@ public class Authentication
         }
 
         var url =
-            $"{baseURL}verify?username={Uri.EscapeDataString(user)}&password={Uri.EscapeDataString(pass)}&hwid={Hwid.GetHWID()}";
+            $"{baseURL}/verify?username={Uri.EscapeDataString(user)}&password={Uri.EscapeDataString(pass)}&hwid={Hwid.GetHWID()}";
         var resp = await client.GetAsync(url);
         if (!resp.IsSuccessStatusCode)
             return null;
@@ -128,7 +129,7 @@ public class Authentication
     public async Task<bool> UsernameExists(string user, string baseURL)
     {
         using var client = new HttpClient();
-        var url = $"{baseURL}verify?username={Uri.EscapeDataString(user)}";
+        var url = $"{baseURL}/verify?username={Uri.EscapeDataString(user)}";
         var resp = await client.GetAsync(url);
         if (!resp.IsSuccessStatusCode)
             return false;
@@ -151,7 +152,7 @@ public class Authentication
             "application/json"
         );
 
-        var resp = await client.PostAsync($"{baseURL}reset-hwid", content);
+        var resp = await client.PostAsync($"{baseURL}/reset-hwid", content);
         var respBody = await resp.Content.ReadAsStringAsync();
 
         if (resp.StatusCode == HttpStatusCode.Forbidden) // 403
