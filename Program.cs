@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 
 namespace GagAuthClient
 {
@@ -6,13 +7,37 @@ namespace GagAuthClient
     {
         // Configuration
         private const string BaseUrl = "http://localhost:3000"; // Change to your server IP
+        private const string LoaderVersion = "1.0.3"; // change this on each release
 
         static async Task Main()
         {
             // Check if username provided owns the required GamePass
             string? username = null;
             int attempts = 0;
-            Console.Title = "AHK Bootstrapper v1.0";
+            Console.Title = "AHK Bootstrapper";
+
+            using var versionClient = new HttpClient();
+            try
+            {
+                var versionResp = await versionClient.GetAsync($"{BaseUrl}/");
+                var content = await versionResp.Content.ReadAsStringAsync();
+                var versionJson = JsonDocument.Parse(content);
+                var serverVersion = versionJson.RootElement.GetProperty("version").GetString();
+
+                if (serverVersion != LoaderVersion)
+                {
+                    Console.Error.WriteLine($"[!] New release available (v{serverVersion}). Please update your loader.");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                    return;
+                }
+            }
+            catch
+            {
+                Console.Error.WriteLine("[X] Failed to check version.");
+                Console.ReadKey();
+                return;
+            }
 
             while (attempts < 2 && string.IsNullOrEmpty(username))
             {
