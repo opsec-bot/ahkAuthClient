@@ -6,7 +6,7 @@ namespace GagAuthClient
     class Program
     {
         // Configuration
-        private const string BaseUrl = "http://localhost:3000"; // Change to your server IP
+        private const string BaseUrl = "http://159.89.89.27:3000"; // Change to your server IP
         private const string LoaderVersion = "1.0.3"; // change this on each release
 
         static async Task Main()
