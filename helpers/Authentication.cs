@@ -110,7 +110,7 @@ public class Authentication
         }
 
         var url =
-            $"{baseURL}/verify?username={Uri.EscapeDataString(user)}&password={Uri.EscapeDataString(pass)}&hwid={HwId.Generate()}";
+            $"{baseURL}/authorize?username={Uri.EscapeDataString(user)}&password={Uri.EscapeDataString(pass)}&hwid={HwId.Generate()}";
         var resp = await client.GetAsync(url);
         if (!resp.IsSuccessStatusCode)
             return null;
@@ -130,7 +130,7 @@ public class Authentication
     public async Task<bool> UsernameExists(string user, string baseURL)
     {
         using var client = new HttpClient();
-        var url = $"{baseURL}/verify?username={Uri.EscapeDataString(user)}";
+        var url = $"{baseURL}/authorize?username={Uri.EscapeDataString(user)}";
         var resp = await client.GetAsync(url);
         if (!resp.IsSuccessStatusCode)
             return false;
@@ -153,7 +153,7 @@ public class Authentication
             "application/json"
         );
 
-        var resp = await client.PostAsync($"{baseURL}/reset-hwid", content);
+        var resp = await client.PostAsync($"{baseURL}/resethwid", content);
         var respBody = await resp.Content.ReadAsStringAsync();
 
         if (resp.StatusCode == HttpStatusCode.Forbidden) // 403
