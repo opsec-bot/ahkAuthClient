@@ -17,7 +17,7 @@ A C# loader that authenticates a Roblox username via GamePass and HWID, securely
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [AutoHotkey v1.1](https://www.autohotkey.com/) installed on your system
-- Setup the [Authentication Server](https://github.com/opsec-bot/gagAuthServer.git)
+- Setup the [Authentication Server](https://github.com/opsec-bot/ahkAuthServer.git)
 
 ---
 
