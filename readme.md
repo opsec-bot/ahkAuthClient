@@ -1,4 +1,4 @@
-﻿# AHK Bootstrapper
+# AHK Bootstrapper
 
 A C# loader that authenticates a Roblox username via GamePass and HWID, securely fetches an encrypted AutoHotkey (AHK) script, and launches it with clean console visuals.
 
@@ -58,3 +58,4 @@ Before building, make sure to update:
   ```csharp
   private static readonly string[] GamePassIds = { "your_gamepass_id_here" };
   ```
+## Showcase: https://youtu.be/vB3aNRbNkdM?si=NTeMhoaSCz6o4xPX
